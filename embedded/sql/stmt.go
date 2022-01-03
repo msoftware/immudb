@@ -64,6 +64,7 @@ const (
 	BooleanType   SQLValueType = "BOOLEAN"
 	VarcharType   SQLValueType = "VARCHAR"
 	BLOBType      SQLValueType = "BLOB"
+	FloatType     SQLValueType = "FLOAT"
 	TimestampType SQLValueType = "TIMESTAMP"
 	AnyType       SQLValueType = "ANY"
 )

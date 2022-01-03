@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -999,7 +1000,39 @@ func EncodeAsKey(val interface{}, colType SQLValueType, maxLen int) ([]byte, err
 
 			return encv[:], nil
 		}
+	case FloatType:
+		{
+			floatVal, ok := val.(float64)
+			if !ok {
+				return nil, fmt.Errorf(
+					"value is not a float: %w", ErrInvalidValue,
+				)
+			}
 
+			// Apart form the sign bit, bit representation of float64
+			// can be sorted lexicographically
+			floatBits := math.Float64bits(floatVal)
+
+			var encv [9]byte
+			encv[0] = KeyValPrefixNotNull
+			binary.BigEndian.PutUint64(encv[1:], floatBits)
+
+			if encv[1]&0x80 != 0 {
+				// For negative numbers, the order must be reversed,
+				// we also negate the sign bit so that all negative
+				// numbers end up in the smaller half of values
+				for i := 1; i < 10; i++ {
+					encv[i] = ^encv[i]
+				}
+			} else {
+				// For positive numbers, the order is already correct,
+				// we only have to set the sign bit to 1 to ensure that
+				// positive numbers end in the larger half of values
+				encv[1] ^= 0x80
+			}
+
+			return encv[:], nil
+		}
 	}
 
 	return nil, ErrInvalidValue
